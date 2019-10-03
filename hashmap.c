@@ -79,8 +79,7 @@ hashmap_put(hashmap* hh, char* kk, int vv)
     // for the key 'kk', replacing any existing value
     // for that key.
     if (hh->size + 1 >= hh->capacity) {
-        printf("expanding: \n");
-        hashmap_dump(hh);
+        // printf("expanding: \n");
         hashmap* new_map = make_hashmap_presize(2 * hh->capacity);
         for(int i=0;i<hh->capacity;i++) {
             hashmap_pair pair = hashmap_get_pair(hh, i);
@@ -93,16 +92,15 @@ hashmap_put(hashmap* hh, char* kk, int vv)
         free(hh->data);
         hh->capacity *= 2;
         hh->data = data;
-        hashmap_dump(hh);
     }
 
     int hash_val = hash(kk) % hh->capacity;
-    printf("put: %s\n, hash %d\n", kk, hash_val);
+    // printf("put: %s\n, hash %d\n", kk, hash_val);
 
     hashmap_pair cur_pair = hashmap_get_pair(hh, hash_val);
     while(cur_pair.used && !cur_pair.tomb) {
         if(strcmp(cur_pair.key, kk) == 0){
-            printf("found key %s at %d, val: %d\n", cur_pair.key, hash_val, vv);
+            // printf("found key %s at %d, val: %d\n", cur_pair.key, hash_val, vv);
             hh->data[hash_val].val = vv;
             return;
         }
@@ -110,11 +108,11 @@ hashmap_put(hashmap* hh, char* kk, int vv)
         cur_pair = hashmap_get_pair(hh, hash_val);
     }
 
-    printf("add new key: %d\n", hash_val);
+    // printf("add new key: %d\n", hash_val);
     hh->data[hash_val].used = true;
     hh->data[hash_val].val = vv;
     strcpy(hh->data[hash_val].key, kk);
-    printf("copying %s to %s\n\n", kk, hh->data[hash_val].key);
+    // printf("copying %s to %s\n\n", kk, hh->data[hash_val].key);
 
     hh->size++;
 }
