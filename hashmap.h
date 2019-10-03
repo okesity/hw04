@@ -14,7 +14,7 @@ typedef struct hashmap {
     long useless_field;
     long size;
     long capacity;
-    hashmap_pair** data;
+    hashmap_pair* data;
     // TODO: Define working hashmap struct.
 } hashmap;
 
@@ -24,7 +24,7 @@ int hashmap_has(hashmap* hh, char* kk);
 int hashmap_get(hashmap* hh, char* kk);
 void hashmap_put(hashmap* hh, char* kk, int vv);
 void hashmap_del(hashmap* hh, char* kk);
-hashmap_pair* hashmap_get_pair(hashmap* hh, int ii);
+hashmap_pair hashmap_get_pair(hashmap* hh, int ii);
 void hashmap_dump(hashmap* hh);
 
 #endif

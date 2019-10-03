@@ -29,7 +29,7 @@ make_hashmap_presize(int nn)
     hashmap* hh = malloc(sizeof(hashmap));
     hh->size = 0;
     hh->capacity = nn;
-    hh->data = calloc(nn, sizeof(hashmap_pair*));
+    hh->data = calloc(nn, sizeof(hashmap_pair));
     // TODO: Allocate and initialize a hashmap with capacity 'nn'.
     // Double check "man calloc" to see what that function does.
     return hh;
@@ -40,26 +40,10 @@ make_hashmap()
 {
     return make_hashmap_presize(4);
 }
-hashmap_pair*
-make_hashmap_pair(const char* kk, int vv) {
-    hashmap_pair* res = malloc(sizeof(hashmap_pair));
-    strcpy(res->key, kk);
-    res->val = vv;
-    res->used = false;
-    res->tomb = false;
-    return res;
-}
 
 void
 free_hashmap(hashmap* hh)
 {
-    for(int i=0;i<hh->capacity;i++) {
-        hashmap_pair* cur = hh->data[i];
-        if(cur) {
-            free(cur->key);
-            free(cur);
-        }
-    }
     free(hh);
 }
 
@@ -74,10 +58,10 @@ hashmap_get(hashmap* hh, char* kk)
 {
     int hash_val = hash(kk) % hh->capacity;
 
-    hashmap_pair* cur_pair = hh->data[hash_val];
-    while(cur_pair && !cur_pair->tomb) {
-        if(strcmp(cur_pair->key, kk) == 0) {
-            return cur_pair->val;
+    hashmap_pair cur_pair = hh->data[hash_val];
+    while(cur_pair.used && !cur_pair.tomb) {
+        if(strcmp(cur_pair.key, kk) == 0) {
+            return cur_pair.val;
         }
         hash_val = (hash_val+1>=hh->capacity) ? 0 : hash_val+1;
         cur_pair = hh->data[hash_val];
@@ -95,33 +79,43 @@ hashmap_put(hashmap* hh, char* kk, int vv)
     // for the key 'kk', replacing any existing value
     // for that key.
     if (hh->size + 1 >= hh->capacity) {
-        printf("hit capacity!\n");
-        // return;
+        printf("expanding: \n");
+        hashmap_dump(hh);
+        hashmap* new_map = make_hashmap_presize(2 * hh->capacity);
+        for(int i=0;i<hh->capacity;i++) {
+            hashmap_pair pair = hashmap_get_pair(hh, i);
+            if(pair.used && !pair.tomb) {
+                hashmap_put(new_map, pair.key, pair.val);
+            }
+        }
+        hashmap_pair* data = new_map->data;       
+        free(new_map);
+        free(hh->data);
+        hh->capacity *= 2;
+        hh->data = data;
+        hashmap_dump(hh);
     }
 
     int hash_val = hash(kk) % hh->capacity;
     printf("put: %s\n, hash %d\n", kk, hash_val);
 
-    hashmap_pair* cur_pair = hashmap_get_pair(hh, hash_val);
-    while(cur_pair && !cur_pair->tomb) {
-        if(strcmp(cur_pair->key, kk) == 0){
-            printf("found key %s at %d\n", cur_pair->key, hash_val);
-            cur_pair->val = vv;
+    hashmap_pair cur_pair = hashmap_get_pair(hh, hash_val);
+    while(cur_pair.used && !cur_pair.tomb) {
+        if(strcmp(cur_pair.key, kk) == 0){
+            printf("found key %s at %d, val: %d\n", cur_pair.key, hash_val, vv);
+            hh->data[hash_val].val = vv;
             return;
         }
         hash_val = (hash_val+1>=hh->capacity) ? 0 : hash_val+1;
         cur_pair = hashmap_get_pair(hh, hash_val);
     }
 
-    if(cur_pair) {
-        printf("free key: %s\n", cur_pair->key);
-        free(cur_pair->key);
-        free(cur_pair);
-    }
-    printf("add new key: %d\n\n", hash_val);
-    hashmap_pair* new_pair = make_hashmap_pair(kk, vv);
-    new_pair->used = true;
-    hh->data[hash_val] = new_pair;
+    printf("add new key: %d\n", hash_val);
+    hh->data[hash_val].used = true;
+    hh->data[hash_val].val = vv;
+    strcpy(hh->data[hash_val].key, kk);
+    printf("copying %s to %s\n\n", kk, hh->data[hash_val].key);
+
     hh->size++;
 }
 
@@ -132,11 +126,11 @@ hashmap_del(hashmap* hh, char* kk)
     // this key in the map.
     int hash_val = hash(kk) % hh->capacity;
 
-    hashmap_pair* cur_pair = hashmap_get_pair(hh, hash_val);
-    while(cur_pair && !cur_pair->tomb) {
-        if(strcmp(cur_pair->key, kk) == 0){
-            printf("deleting key %s at %d\n", cur_pair->key, hash_val);
-            cur_pair->tomb = true;
+    hashmap_pair cur_pair = hashmap_get_pair(hh, hash_val);
+    while(cur_pair.used && !cur_pair.tomb) {
+        if(strcmp(cur_pair.key, kk) == 0){
+            printf("deleting key %s at %d\n", cur_pair.key, hash_val);
+            cur_pair.tomb = true;
             return;
         }
         hash_val = (hash_val+1>=hh->capacity) ? 0 : hash_val+1;
@@ -144,7 +138,7 @@ hashmap_del(hashmap* hh, char* kk)
     }
 }
 
-hashmap_pair*
+hashmap_pair
 hashmap_get_pair(hashmap* hh, int ii)
 {
     // TODO: Get the {k,v} pair stored in index 'ii'.
@@ -157,9 +151,8 @@ hashmap_dump(hashmap* hh)
 {
     printf("== hashmap dump ==\n");
     for(int i=0;i<hh->capacity; i++) {
-        hashmap_pair* cur = hashmap_get_pair(hh, i);
-        if(cur)
-            printf("{%s, %d, tomb: %d, used: %d}\n", cur->key, cur->val, cur->tomb, cur->used);
+        hashmap_pair cur = hashmap_get_pair(hh, i);
+        printf("{%s, %d, tomb: %d, used: %d}\n", cur.key, cur.val, cur.tomb, cur.used);
         // printf("{%s, %d}\n", cur->key, cur->val);
     }
     // TODO: Print out all the keys and values currently
