@@ -19,7 +19,6 @@ sort(svec* xs)
 void
 chomp(char* text)
 {
-    // TODO: Modify input string to remove trailing newline ('\n')
     if(text) {
         long length = strlen(text) -1;
         if(*text && text[length] == '\n'){

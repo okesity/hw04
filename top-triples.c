@@ -9,7 +9,12 @@
 void
 chomp(char* text)
 {
-    // TODO: remove trailing newline from string
+    if(text) {
+        long length = strlen(text) -1;
+        if(*text && text[length] == '\n'){
+            text[length] = '\0';
+        }
+    }
 }
 
 int
@@ -58,35 +63,36 @@ main(int argc, char* argv[])
     }
 
     fclose(fh);
+    hashmap_dump(trips);
 
-    hashmap_pair tops[NN];
-    for (int ii = 0; ii < NN; ++ii) {
-        tops[ii].val = 0;
-    }
+    // hashmap_pair tops[NN];
+    // for (int ii = 0; ii < NN; ++ii) {
+    //     tops[ii].val = 0;
+    // }
 
-    // TODO: 0 is probably the wrong loop bound here.
-    for (int ii = 0; ii < 0; ++ii) {
-        hashmap_pair pair = hashmap_get_pair(trips, ii);
-        if (!pair.used || pair.tomb) {
-            continue;
-        }
+    // // TODO: 0 is probably the wrong loop bound here.
+    // for (int ii = 0; ii < trips->capacity; ++ii) {
+    //     hashmap_pair pair = hashmap_get_pair(trips, ii);
+    //     if (!pair.used || pair.tomb) {
+    //         continue;
+    //     }
 
-        int count = pair.val;
+    //     int count = pair.val;
 
-        for (int jj = 0; jj < NN; ++jj) {
-            if (count > tops[jj].val) {
-                hashmap_pair tmp = tops[jj];
-                tops[jj] = pair;
-                pair = tmp;
-            }
-        }
-    }
+    //     for (int jj = 0; jj < NN; ++jj) {
+    //         if (count > tops[jj].val) {
+    //             hashmap_pair tmp = tops[jj];
+    //             tops[jj] = pair;
+    //             pair = tmp;
+    //         }
+    //     }
+    // }
 
-    for (int ii = 0; ii < NN; ++ii) {
-        hashmap_pair pair = tops[ii];
-        printf("%d\t%s\n", pair.val, pair.key);
-    }
+    // for (int ii = 0; ii < NN; ++ii) {
+    //     hashmap_pair pair = tops[ii];
+    //     printf("%d\t%s\n", pair.val, pair.key);
+    // }
 
-    free_hashmap(trips);
+    // free_hashmap(trips);
     return 0;
 }
